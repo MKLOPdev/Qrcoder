@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Master | Generate & Scan QR Codes</title>
+    
+    <!-- Libraries -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        /* Reset & Variables */
+        :root {
+            --primary: #7c3aed;
+            --secondary: #2dd4bf;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--light);
+            min-height: 100vh;
+            transition: var(--transition);
+            overflow-x: hidden;
+        }
+
+        body.dark-mode {
+            --light: #111827;
+            --dark: #f3f4f6;
+            --card-bg: rgba(31, 41, 55, 0.9);
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Particles Background */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Header Styles */
+        .header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 7rem auto 2rem;
+            padding: 0 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 1rem;
+            background: var(--card-bg);
+            color: var(--dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 
+                4px 4px 8px var(--shadow),
+                -4px -4px 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 
+                8px 8px 16px var(--shadow),
+                -8px -8px 16px rgba(255, 255, 255, 0.5);
+            transition: var(--transition);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) rotateX(5deg);
+        }
+
+        .card h2 {
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid transparent;
+            border-radius: 0.75rem;
+            background: var(--light);
+            color: var(--dark);
+            transition: var(--transition);
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .qr-result {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .qr-result img {
+            max-width: 200px;
+            border-radius: 1rem;
+            box-shadow: 
+                4px 4px 8px var(--shadow),
+                -4px -4px 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .scanner-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 1rem;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 1rem;
+        }
+
+        .history {
+            margin-top: 2rem;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+        }
+
+        .history-item i {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                margin-top: 5rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particles Background -->
+    <div id="particles-js"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class='bx bx-qr'></i>
+            <span>QR Master</span>
+        </div>
+        <button class="theme-toggle" id="themeToggle">
+            <i class='bx bx-moon'></i>
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" data-tab="generate">Generate QR Code</button>
+            <button class="tab" data-tab="scan">Scan QR Code</button>
+        </div>
+
+        <div class="content">
+            <!-- Generate QR Section -->
+            <div class="card" id="generateSection">
+                <h2>Generate QR Code</h2>
+                <div class="input-group">
+                    <label>Content Type</label>
+                    <select id="contentType">
+                        <option value="text">Text</option>
+                        <option value="url">URL</option>
+                        <option value="email">Email</option>
+                        <option value="wifi">WiFi</option>
+                        <option value="phone">Phone</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Content</label>
+                    <input type="text" id="content" placeholder="Enter content...">
+                </div>
+
+                <div class="input-group">
+                    <label>Size</label>
+                    <select id="size">
+                        <option value="200">Small</option>
+                        <option value="300" selected>Medium</option>
+                        <option value="400">Large</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Color</label>
+                    <input type="color" id="color" value="#000000">
+                </div>
+
+                <button class="btn" id="generateBtn">Generate QR Code</button>
+
+                <div class="qr-result" id="qrResult"></div>
+            </div>
+
+            <!-- Scan QR Section -->
+            <div class="card" id="scanSection" style="display: none;">
+                <h2>Scan QR Code</h2>
+                <div class="scanner-container">
+                    <div id="reader"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>Or Upload Image</label>
+                    <input type="file" id="qrFile" accept="image/*">
+                </div>
+
+                <div class="history">
+                    <h3>Scan History</h3>
+                    <div id="scanHistory"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Particles.js Configuration
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: '#7c3aed' },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5, random: false },
+                size: { value: 3, random: true },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: '#7c3aed',
+                    opacity: 0.4,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 2,
+                    direction: 'none',
+                    random: false,
+                    straight: false,
+                    out_mode: 'out',
+                    bounce: false
+                }
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: {
+                    onhover: { enable: true, mode: 'repulse' },
+                    onclick: { enable: true, mode: 'push' },
+                    resize: true
+                }
+            },
+            retina_detect: true
+        });
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const icon = themeToggle.querySelector('i');
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            icon.classList.toggle('bx-moon');
+            icon.classList.toggle('bx-sun');
+        });
+
+        // Tab Switching
+        const tabs = document.querySelectorAll('.tab');
+        const generateSection = document.getElementById('generateSection');
+        const scanSection = document.getElementById('scanSection');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                if (tab.dataset.tab === 'generate') {
+                    generateSection.style.display = 'block';
+                    scanSection.style.display = 'none';
+                } else {
+                    generateSection.style.display = 'none';
+                    scanSection.style.display = 'block';
+                    initScanner();
+                }
+            });
+        });
+
+        // QR Code Generation
+        const generateBtn = document.getElementById('generateBtn');
+        const qrResult = document.getElementById('qrResult');
+
+        generateBtn.addEventListener('click', () => {
+            const content = document.getElementById('content').value;
+            const size = document.getElementById('size').value;
+            const color = document.getElementById('color').value.substring(1);
+            
+            if (!content) {
+                alert('Please enter content');
+                return;
+            }
+
+            const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(content)}&size=${size}x${size}&color=${color}`;
+
+            qrResult.innerHTML = `
+                <img src="${url}" alt="QR Code" class="floating">
+                <button class="btn" onclick="window.open('${url}', '_blank')" style="margin-top: 1rem;">
+                    Download QR Code
+                </button>
+            `;
+        });
+
+        // QR Code Scanner
+        let html5QrcodeScanner;
+
+        function initScanner() {
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                });
+
+                html5QrcodeScanner.render(onScanSuccess, onScanError);
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            addToHistory(decodedText);
+            alert('Scanned: ' + decodedText);
+        }
+
+        function onScanError(error) {
+            console.warn(`Code scan error = ${error}`);
+        }
+
+        // Scan History
+        const scanHistory = document.getElementById('scanHistory');
+        const history = JSON.parse(localStorage.getItem('qrHistory')) || [];
+
+        function addToHistory(text) {
+            history.unshift({
+                text,
+                timestamp: new Date().toLocaleString()
+            });
+            
+            if (history.length > 5) history.pop();
+            localStorage.setItem('qrHistory', JSON.stringify(history));
+            updateHistoryUI();
+        }
+
+        function updateHistoryUI() {
+            scanHistory.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <i class='bx bx-history'></i>
+                    <div>
+                        <div style="color: var(--dark);">${item.text}</div>
+                        <small style="color: var(--primary);">${item.timestamp}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // File Upload Scanner
+        const qrFile = document.getElementById('qrFile');
+        qrFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('https://api.qrserver.com/v1/read-qr-code/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const result = data[0].symbol[0].data;
+                    if (result) {
+                        addToHistory(result);
+                        alert('Scanned from image: ' + result);
+                    } else {
+                        alert('No QR code found in image');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error scanning image');
+                });
+            }
+        });
+
+        // Initialize History UI
+        updateHistoryUI();
+    </script>
+</body>
+</html>
